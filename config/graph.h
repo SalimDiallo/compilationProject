@@ -31,7 +31,7 @@ node create_node(Transitions transitions, type value, int is_final);
 
 void add_node_to_liste(list* l, Transitions transitions, type value, int is_final);
 
-children * get_transition(node n, type value, type transition);
+children * get_transition(node n, type value);
 
 node* get_node(list l,type value);
 

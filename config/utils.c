@@ -1,5 +1,7 @@
 #include "utils.h"
 #include "constant.h"
+#include "graph.h"
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,7 +13,6 @@ char **  get_grammaire_file(char * url){
         return NULL;
     }
 
-    // Count lines first
     int line_count = 0;
     char ch;
     while ((ch = fgetc(file)) != EOF) {
@@ -20,14 +21,12 @@ char **  get_grammaire_file(char * url){
         }
     }
 
-    // Check if last line doesn't end with newline
     fseek(file, -1, SEEK_END);
     ch = fgetc(file);
     if (ch != '\n' && ch != EOF) {
         line_count++;
     }
 
-    // Allocate array for line pointers (+ 1 for NULL terminator)
     char **lines = (char **)malloc((line_count + 1) * sizeof(char *));
     if (lines == NULL) {
         printf("Error: Memory allocation failed\n");
@@ -35,25 +34,20 @@ char **  get_grammaire_file(char * url){
         return NULL;
     }
 
-    // Reset to beginning of file
     fseek(file, 0, SEEK_SET);
 
-    // Read lines
     char buffer[1024];
     int i = 0;
     while (fgets(buffer, sizeof(buffer), file) != NULL && i < line_count) {
-        // Remove newline character if present
         size_t len = strlen(buffer);
         if (len > 0 && buffer[len - 1] == '\n') {
             buffer[len - 1] = '\0';
             len--;
         }
 
-        // Allocate memory for this line
         lines[i] = (char *)malloc(len + 1);
         if (lines[i] == NULL) {
             printf("Error: Memory allocation failed for line %d\n", i);
-            // Free previously allocated lines
             for (int j = 0; j < i; j++) {
                 free(lines[j]);
             }
@@ -66,7 +60,6 @@ char **  get_grammaire_file(char * url){
         i++;
     }
 
-    // NULL terminate the array
     lines[i] = NULL;
 
     fclose(file);
@@ -85,42 +78,34 @@ list get_grammaire_list(char * line_transitions_tab){
         return NULL;
     }
 
-    // Parse each line
     for (int i = 0; lines[i] != NULL; i++) {
         char *line = lines[i];
 
-        // Skip empty lines
         if (strlen(line) == 0) {
             continue;
         }
 
-        // Parse format: "A -> bB" or "B -> \t"
         char state;
         char transition_input;
         char next_state;
         int is_terminal = 0;
 
-        // Find the state (before "->")
         int pos = 0;
-        while (line[pos] == ' ') pos++; // Skip leading spaces
+        while (line[pos] == ' ') pos++; 
         state = line[pos];
         pos++;
 
-        // Skip to "->"
         while (line[pos] != '-' && line[pos] != '\0') pos++;
-        if (line[pos] == '\0') continue; // Invalid format
-        pos += 2; // Skip "->"
+        if (line[pos] == '\0') continue; 
+        pos += 2; 
 
-        // Skip spaces after "->"
         while (line[pos] == ' ') pos++;
 
-        // Check for terminal/epsilon (\t)
         if (line[pos] == '\\' && line[pos + 1] == 't') {
             is_terminal = 1;
             transition_input = '\0';
             next_state = '\0';
         } else {
-            // Read transition input and next state
             transition_input = line[pos];
             pos++;
 
@@ -131,18 +116,15 @@ list get_grammaire_list(char * line_transitions_tab){
             }
         }
 
-        // Find or create the node for this state
         node *current_node = get_node(l, state);
 
         if (current_node == NULL) {
-            // Create new node
             Transitions trans = NULL;
             if (!is_terminal) {
                 add_children(&trans, transition_input, next_state);
             }
             add_node_to_liste(&l, trans, state, is_terminal);
         } else {
-            // Add transition to existing node
             if (!is_terminal) {
                 add_children(&(current_node->transitions), transition_input, next_state);
             }
@@ -152,7 +134,6 @@ list get_grammaire_list(char * line_transitions_tab){
         }
     }
 
-    // Free the lines array
     for (int i = 0; lines[i] != NULL; i++) {
         free(lines[i]);
     }
@@ -162,6 +143,28 @@ list get_grammaire_list(char * line_transitions_tab){
 }
 
 int check_string(char * ch, list l){
+    int n = strlen(ch);
+    if (n == 0) return 0;
+    if (l == NULL) return 0;
 
-    return 0;
+    node * current = l;
+
+    for (int i = 0; ch[i] != '\0'; i++) {
+        children * transition = get_transition(*current, ch[i]);
+
+        if (transition == NULL) {
+            if (current->is_final == 1) {
+                return 1;
+            }
+            return 0;
+        }
+
+        node * next = get_node(l, transition->transition);
+        if (next == NULL) {
+            return 0;
+        }
+        current = next;
+    }
+
+    return current->is_final;
 }

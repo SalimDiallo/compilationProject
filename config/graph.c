@@ -56,10 +56,10 @@ void add_node_to_liste(list* l, Transitions transitions, type value, int is_fina
     }
 }
 
-children * get_transition(node n, type value, type transition){
+children * get_transition(node n, type value){
     Transitions t = n.transitions;
     while (t != NULL) {
-        if (t->transition == transition && t->value == value) {
+        if (t->value == value) {
             return t;
         }
         t = t->next;
@@ -78,14 +78,13 @@ node * get_node(list l,type value){
     return NULL;
 }
 
-// Fonction pour afficher le contenu de la liste
 void afficher_liste(list l) {
     node *cur = l;
     while (cur != NULL) {
         children *trans = cur->transitions;
         printf("%c", cur->value);
         if (cur->is_final) {
-            printf(" *"); // état final
+            printf(" *");
         }
         printf(" : ");
         while (trans != NULL) {
