@@ -12,7 +12,8 @@ int main(){
     } else {
         printf("Failed to load grammar\n");
     }
-    printf("result : %d", check_string("bdddccccdcc", l));
+    printf("result : %d", check_string("aaa", l));
+    printf("\nresult : %d", check_string("dddccccdcc", l));
 
     return 0;
 }

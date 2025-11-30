@@ -144,16 +144,17 @@ list get_grammaire_list(char * line_transitions_tab){
 
 int check_string(char * ch, list l){
     int n = strlen(ch);
+    int cpt = 0;
     if (n == 0) return 0;
     if (l == NULL) return 0;
 
     node * current = l;
 
     for (int i = 0; ch[i] != '\0'; i++) {
+        cpt++;
         children * transition = get_transition(*current, ch[i]);
-
         if (transition == NULL) {
-            if (current->is_final == 1) {
+            if (current->is_final == 1 && cpt == n -1) {
                 return 1;
             }
             return 0;
@@ -167,4 +168,93 @@ int check_string(char * ch, list l){
     }
 
     return current->is_final;
+}
+
+list parse_grammaire_text(char * grammar_text){
+    if (grammar_text == NULL || strlen(grammar_text) == 0) {
+        return NULL;
+    }
+
+    list l = NULL;
+
+    // Split text into lines
+    char *text_copy = strdup(grammar_text);
+    char *line = strtok(text_copy, "\n");
+
+    while (line != NULL) {
+        // Skip empty lines
+        if (strlen(line) == 0) {
+            line = strtok(NULL, "\n");
+            continue;
+        }
+
+        // Parse format: "A -> bB" or "B -> \t"
+        char state;
+        char transition_input;
+        char next_state;
+        int is_terminal = 0;
+
+        // Find the state (before "->")
+        int pos = 0;
+        while (line[pos] == ' ') pos++; // Skip leading spaces
+        if (line[pos] == '\0') {
+            line = strtok(NULL, "\n");
+            continue;
+        }
+        state = line[pos];
+        pos++;
+
+        // Skip to "->"
+        while (line[pos] != '-' && line[pos] != '\0') pos++;
+        if (line[pos] == '\0') {
+            line = strtok(NULL, "\n");
+            continue;
+        }
+        pos += 2; // Skip "->"
+
+        // Skip spaces after "->"
+        while (line[pos] == ' ') pos++;
+
+        // Check for terminal/epsilon (\t)
+        if (line[pos] == '\\' && line[pos + 1] == 't') {
+            is_terminal = 1;
+            transition_input = '\0';
+            next_state = '\0';
+        } else {
+            // Read transition input and next state
+            transition_input = line[pos];
+            pos++;
+
+            if (line[pos] != '\0' && line[pos] != ' ' && line[pos] != '\r') {
+                next_state = line[pos];
+            } else {
+                next_state = '\0';
+            }
+        }
+
+        // Find or create the node for this state
+        node *current_node = get_node(l, state);
+
+        if (current_node == NULL) {
+            // Create new node
+            Transitions trans = NULL;
+            if (!is_terminal) {
+                add_children(&trans, transition_input, next_state);
+            }
+            add_node_to_liste(&l, trans, state, is_terminal);
+        } else {
+            // Add transition to existing node
+            if (!is_terminal) {
+                add_children(&(current_node->transitions), transition_input, next_state);
+            }
+            if (is_terminal) {
+                current_node->is_final = 1;
+            }
+        }
+
+        line = strtok(NULL, "\n");
+    }
+
+    free(text_copy);
+    return l;
 }
