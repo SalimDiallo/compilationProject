@@ -71,7 +71,6 @@ void create_main_window(AppData *app) {
     GtkWidget *tab1_label = gtk_label_new("Load from File");
     gtk_notebook_append_page(GTK_NOTEBOOK(app->notebook), file_tab, tab1_label);
 
-    // ===== TAB 2: Manual Input =====
     GtkWidget *input_tab = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_set_border_width(GTK_CONTAINER(input_tab), 10);
 
@@ -98,7 +97,6 @@ void create_main_window(AppData *app) {
     GtkWidget *tab2_label = gtk_label_new("Manual Input");
     gtk_notebook_append_page(GTK_NOTEBOOK(app->notebook), input_tab, tab2_label);
 
-    // Grammar display section
     GtkWidget *grammar_label = gtk_label_new("Loaded Grammar:");
     gtk_box_pack_start(GTK_BOX(vbox), grammar_label, FALSE, FALSE, 0);
 
@@ -114,7 +112,6 @@ void create_main_window(AppData *app) {
     gtk_container_add(GTK_CONTAINER(scrolled), app->grammar_text);
     gtk_box_pack_start(GTK_BOX(vbox), scrolled, TRUE, TRUE, 0);
 
-    // String checking section
     GtkWidget *separator = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_box_pack_start(GTK_BOX(vbox), separator, FALSE, FALSE, 5);
 
@@ -130,12 +127,10 @@ void create_main_window(AppData *app) {
     gtk_box_pack_start(GTK_BOX(string_hbox), check_button, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(vbox), string_hbox, FALSE, FALSE, 0);
 
-    // Result section
     app->result_label = gtk_label_new("");
     gtk_label_set_markup(GTK_LABEL(app->result_label), "<span font='14'>Result will appear here</span>");
     gtk_box_pack_start(GTK_BOX(vbox), app->result_label, FALSE, FALSE, 10);
 
-    // Initialize grammar list
     app->grammar_list = NULL;
 }
 
@@ -144,7 +139,6 @@ void on_load_grammar_file(GtkWidget *widget, gpointer data) {
     AppData *app = (AppData *)data;
     const char *filename = gtk_entry_get_text(GTK_ENTRY(app->file_entry));
 
-    // Load grammar
     app->grammar_list = get_grammaire_list((char *)filename);
 
     if (app->grammar_list == NULL) {
@@ -176,7 +170,6 @@ void on_parse_grammar_input(GtkWidget *widget, gpointer data) {
         return;
     }
 
-    // Parse grammar
     app->grammar_list = parse_grammaire_text(text);
     g_free(text);
 
