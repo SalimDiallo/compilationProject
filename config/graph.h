@@ -21,7 +21,6 @@ typedef struct Node{
 
 typedef node * list;
 
-
 children create_children(type value,type transition);
 
 

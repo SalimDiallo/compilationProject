@@ -1,4 +1,4 @@
-A -> bB
+A -> aB
 B -> dB
 B -> cB
 B -> \t

@@ -12,14 +12,28 @@ This is a compiler/formal grammar processing project written in C. The project i
 
 ## Build & Run
 
-**Compile the project:**
+**Using Makefile (recommended):**
 ```bash
-gcc main.c config/graph.c config/utils.c config/constant.c -o main
+make              # Build all targets
+make main         # Build console version only
+make grammar_app  # Build GUI version only
+make run          # Build and run console version
+make run-gui      # Build and run GUI version
+make clean        # Clean build files
 ```
 
-**Run the executable:**
+**Manual compilation:**
+
+Console version:
 ```bash
+gcc main.c config/graph.c config/utils.c config/constant.c -o main
 ./main
+```
+
+GUI version (requires GTK3):
+```bash
+gcc ui/start.c ui/grammar_ui.c config/graph.c config/utils.c config/constant.c -o grammar_app $(pkg-config --cflags --libs gtk+-3.0)
+./grammar_app
 ```
 
 ## Architecture
@@ -45,13 +59,17 @@ The project uses a linked-list based graph structure to represent finite automat
   - Graph traversal and display
 
 - **config/utils.{c,h}**: Higher-level utilities for grammar processing
-  - `get_grammaire_file()`: Reads grammar from file
-  - `get_grammaire_graph()`: Parses grammar content into graph structure
-  - Currently stubs - implementation pending
+  - `get_grammaire_file(char *url)`: Reads grammar file and returns array of lines (char**)
+  - `get_grammaire_list(char *file_path)`: Parses grammar file into graph structure (list)
+  - `check_string(char *str, list l)`: Validates if a string is accepted by the grammar automaton
 
-- **config/constant.{c,h}**: Project constants (currently empty placeholder)
+- **config/constant.{c,h}**: Project constants
 
-- **main.c**: Entry point demonstrating graph creation and manipulation
+- **main.c**: Console entry point demonstrating grammar loading and string checking
+
+- **ui/**: GTK3 graphical user interface
+  - `start.c`: GUI application entry point
+  - `grammar_ui.{c,h}`: UI implementation with file loading, grammar display, and string validation interface
 
 ### Grammar File Format
 
