@@ -4,12 +4,12 @@ Un outil de vérification de grammaires formelles avec interface graphique GTK3.
 
 ## Fonctionnalités
 
-- ✅ Chargement de fichiers de grammaire
-- ✅ **Saisie manuelle de grammaire** (nouveau!)
-- ✅ Représentation en graphe d'automate fini
-- ✅ Vérification de chaînes de caractères
-- ✅ Interface en ligne de commande
-- ✅ Interface graphique GTK3 avec onglets
+- Chargement de fichiers de grammaire
+- **Saisie manuelle de grammaire** (nouveau!)
+- Représentation en graphe d'automate fini
+- Vérification de chaînes de caractères
+- Interface en ligne de commande
+- Interface graphique GTK3 avec onglets
 
 ## Installation
 
@@ -40,15 +40,18 @@ make run-gui
 L'interface dispose de **deux onglets** pour charger la grammaire:
 
 **Onglet "Load from File":**
+
 - Charger un fichier de grammaire (par défaut: `input/grammaire.txt`)
 - Bouton "Load Grammar" pour parser le fichier
 
 **Onglet "Manual Input":**
+
 - Zone de texte pour saisir la grammaire directement
 - Format: une règle par ligne (ex: `A -> bB`)
 - Bouton "Parse Grammar" pour analyser la grammaire saisie
 
 **Fonctionnalités communes:**
+
 - Visualisation de la grammaire chargée avec états et transitions
 - Zone de saisie pour tester des chaînes
 - Résultat coloré: ✓ Acceptée (vert) ou ✗ Rejetée (rouge)

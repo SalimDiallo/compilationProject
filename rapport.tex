@@ -1,0 +1,913 @@
+\documentclass[12pt,a4paper]{article}
+
+% ===== PACKAGES =====
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{tikz}
+\usetikzlibrary{automata,positioning,arrows.meta}
+
+% ===== CONFIGURATION =====
+\geometry{margin=2.5cm}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!70!black,
+    urlcolor=blue!70!black,
+    citecolor=blue!70!black
+}
+
+% Configuration des listings pour le code C
+\definecolor{codegreen}{rgb}{0.2,0.6,0.2}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.97,0.97,0.97}
+
+\lstdefinestyle{cstyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{blue}\bfseries,
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=4,
+    frame=single,
+    rulecolor=\color{gray!30}
+}
+
+\lstdefinestyle{bashstyle}{
+    backgroundcolor=\color{backcolour},
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    frame=single,
+    rulecolor=\color{gray!30},
+    language=bash
+}
+
+\lstset{style=cstyle, language=C}
+
+% En-têtes et pieds de page
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\leftmark}
+\fancyhead[R]{Analyseur de Grammaires Régulières}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+% ===== DOCUMENT =====
+\begin{document}
+
+% ===== PAGE DE TITRE =====
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+    
+    {\Huge\bfseries Rapport de Projet\par}
+    \vspace{1cm}
+    {\LARGE Analyseur de Grammaires Régulières\par}
+    
+    \vspace{2cm}
+    
+    \rule{\textwidth}{0.4pt}
+    \vspace{0.5cm}
+    
+    {\Large\textbf{Cours :} Théorie des Langages et Compilation\par}
+    
+    \vspace{0.5cm}
+    \rule{\textwidth}{0.4pt}
+    
+    \vspace{2cm}
+    
+    {\large\textbf{Réalisé par :} [Votre Nom]\par}
+    \vspace{0.5cm}
+    {\large\textbf{Date :} Décembre 2024\par}
+    
+    \vspace{2cm}
+    
+    \begin{abstract}
+        \noindent\textbf{Objectif :} Implémenter un programme capable de modéliser une grammaire régulière et d'effectuer l'analyse de séquences par dérivation/automates.
+    \end{abstract}
+    
+    \vfill
+\end{titlepage}
+
+% ===== TABLE DES MATIÈRES =====
+\tableofcontents
+\newpage
+
+% ===== SECTION 1 : INTRODUCTION =====
+\section{Introduction}
+
+Ce projet consiste en la conception et la réalisation d'un outil permettant de manipuler des \textbf{grammaires régulières}. L'enjeu est de transformer une définition textuelle de règles de production (ex: \texttt{A $\rightarrow$ aB}) en une structure de données exploitable (un automate fini) afin de valider si des chaînes de caractères appartiennent au langage défini.
+
+Le projet propose deux interfaces :
+
+\begin{itemize}
+    \item Une \textbf{interface console} pour des tests rapides
+    \item Une \textbf{interface graphique GTK+3} permettant une interaction intuitive avec visualisation en temps réel
+\end{itemize}
+
+% ===== SECTION 2 : ANALYSE THÉORIQUE =====
+\section{Analyse Théorique}
+
+Le programme repose sur les concepts fondamentaux de la hiérarchie de Chomsky.
+
+\subsection{Grammaire Régulière}
+
+Les grammaires régulières sont des grammaires dont les règles de production sont de la forme :
+
+\begin{itemize}
+    \item $A \rightarrow aB$ (forme linéaire droite)
+    \item $A \rightarrow a$ (production terminale)
+    \item $A \rightarrow \varepsilon$ (production epsilon, notée \texttt{\textbackslash t} dans notre implémentation)
+\end{itemize}
+
+où $A$ et $B$ sont des \textbf{non-terminaux} et $a$ est un \textbf{symbole terminal}.
+
+\subsection{Processus de Dérivation}
+
+Pour valider une chaîne, le programme suit le cheminement des non-terminaux :
+
+\begin{enumerate}
+    \item Partir de l'état initial (premier non-terminal)
+    \item Pour chaque symbole de la chaîne d'entrée, suivre la transition correspondante
+    \item Si après lecture complète de la chaîne nous atteignons un état marqué comme \textbf{final}, la séquence est \textbf{acceptée}
+\end{enumerate}
+
+\subsection{Représentation par Automate}
+
+La grammaire est stockée sous forme de \textbf{Graphe Orienté} où :
+
+\begin{itemize}
+    \item Chaque \textbf{nœud} représente un état (non-terminal)
+    \item Chaque \textbf{arc} représente une transition étiquetée par un symbole terminal
+    \item Les états finaux correspondent aux non-terminaux ayant une production epsilon
+\end{itemize}
+
+\textbf{Exemple de correspondance :}
+
+\begin{center}
+\begin{tabular}{cc}
+\textbf{Grammaire} & \textbf{Automate} \\
+\midrule
+$A \rightarrow aB$ & État $A$ $\xrightarrow{a}$ État $B$ \\
+$B \rightarrow cB$ & État $B$ $\xrightarrow{c}$ État $B$ \\
+$B \rightarrow \varepsilon$ & État $B$ (final) \\
+\end{tabular}
+\end{center}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[->,>=Stealth,shorten >=1pt,auto,node distance=3cm,
+                    semithick,initial text=]
+    \node[state,initial] (A) {$A$};
+    \node[state,accepting] (B) [right of=A] {$B$};
+    
+    \path (A) edge node {$a$} (B)
+          (B) edge [loop above] node {$c$} (B);
+\end{tikzpicture}
+\caption{Représentation graphique de l'automate}
+\end{figure}
+
+% ===== SECTION 3 : ARCHITECTURE DU SYSTÈME =====
+\section{Architecture du Système}
+
+L'application est découpée en trois couches distinctes.
+
+\subsection{Le Moteur Logique (Backend)}
+
+Situé dans le dossier \texttt{config/}, il gère la structure de données.
+
+\subsubsection{Structures de Données (\texttt{config/graph.h})}
+
+\begin{lstlisting}[caption={Structures de données principales}]
+typedef char type;
+
+// Structure representant une transition
+typedef struct Children {
+    type value;           // Symbole de transition (terminal)
+    type transition;      // Etat cible
+    struct Children * next;
+} children;
+
+typedef children * Transitions;
+
+// Structure representant un etat (noeud)
+typedef struct Node{
+    type value;           // Identifiant de l'etat
+    int is_final;         // 1 si etat final, 0 sinon
+    Transitions transitions; // Liste des transitions sortantes
+    struct Node * next;
+} node;
+
+typedef node * list;
+\end{lstlisting}
+
+\textbf{Explication :}
+\begin{itemize}
+    \item La structure \texttt{children} forme une \textbf{liste chaînée de transitions} pour chaque état
+    \item La structure \texttt{node} contient l'état lui-même et sa liste de transitions
+    \item Le \texttt{list} est une \textbf{liste chaînée de tous les états} du graphe
+\end{itemize}
+
+\subsubsection{Opérations sur le Graphe (\texttt{config/graph.c})}
+
+\textbf{Création et ajout de transitions :}
+
+\begin{lstlisting}[caption={Fonction d'ajout de transition}]
+void add_children(Transitions * transitions, type value, type transition){
+    // Allocation dynamique d'une nouvelle transition
+    children *c = (children*)malloc(sizeof(children));
+    if (!c) return;
+
+    c->transition = transition;  // Etat cible
+    c->value = value;           // Symbole de transition
+    c->next = NULL;
+
+    // Insertion en fin de liste
+    if (*transitions == NULL) {
+        *transitions = c;
+    } else {
+        children *cur = *transitions;
+        while (cur->next != NULL) {
+            cur = cur->next;
+        }
+        cur->next = c;
+    }
+}
+\end{lstlisting}
+
+\textbf{Création et ajout d'un état :}
+
+\begin{lstlisting}[caption={Fonction d'ajout d'état}]
+void add_node_to_liste(list* l, Transitions transitions, type value, int is_final){
+    node *n = (node*)malloc(sizeof(node));
+    if (!n) return;
+
+    n->is_final = is_final;
+    n->value = value;
+    n->transitions = transitions;
+    n->next = NULL;
+
+    // Insertion en fin de liste
+    if (*l == NULL) {
+        *l = n;
+    } else {
+        node *cur = *l;
+        while (cur->next != NULL) {
+            cur = cur->next;
+        }
+        cur->next = n;
+    }
+}
+\end{lstlisting}
+
+\textbf{Recherche de transition :}
+
+\begin{lstlisting}[caption={Fonction de recherche de transition}]
+children * get_transition(node n, type value){
+    Transitions t = n.transitions;
+    while (t != NULL) {
+        if (t->value == value) {  // Symbole trouve
+            return t;
+        }
+        t = t->next;
+    }
+    return NULL;  // Pas de transition pour ce symbole
+}
+\end{lstlisting}
+
+\textbf{Recherche d'un état :}
+
+\begin{lstlisting}[caption={Fonction de recherche d'état}]
+node * get_node(list l, type value){
+    node *cur = l;
+    while (cur != NULL) {
+        if (cur->value == value) {
+            return cur;
+        }
+        cur = cur->next;
+    }
+    return NULL;
+}
+\end{lstlisting}
+
+\textbf{Affichage du graphe (console) :}
+
+\begin{lstlisting}[caption={Fonction d'affichage du graphe}]
+void afficher_liste(list l) {
+    node *cur = l;
+    while (cur != NULL) {
+        children *trans = cur->transitions;
+        printf("%c", cur->value);
+
+        // Marquer les etats finaux avec *
+        if (cur->is_final) {
+            printf(" *");
+        }
+        printf(" : ");
+
+        // Afficher toutes les transitions
+        while (trans != NULL) {
+            printf("->%c%c", trans->value, trans->transition);
+            if (trans->next != NULL) {
+                printf(" | ");
+            }
+            trans = trans->next;
+        }
+        printf("\n");
+        cur = cur->next;
+    }
+}
+\end{lstlisting}
+
+\subsection{Le Parseur (\texttt{config/utils.c})}
+
+Le programme propose \textbf{deux modes d'entrée} pour charger une grammaire.
+
+\subsubsection{Parsing de Fichier}
+
+\textbf{Lecture du fichier :}
+
+\begin{lstlisting}[caption={Fonction de lecture de fichier}]
+char ** get_grammaire_file(char * url){
+    FILE *file = fopen(url, "r");
+    if (file == NULL) {
+        printf("Error: Could not open file '%s'\n", url);
+        return NULL;
+    }
+
+    // Compter le nombre de lignes
+    int line_count = 0;
+    char ch;
+    while ((ch = fgetc(file)) != EOF) {
+        if (ch == '\n') {
+            line_count++;
+        }
+    }
+
+    // Verifier la derniere ligne
+    fseek(file, -1, SEEK_END);
+    ch = fgetc(file);
+    if (ch != '\n' && ch != EOF) {
+        line_count++;
+    }
+
+    // Allocation du tableau de lignes
+    char **lines = (char **)malloc((line_count + 1) * sizeof(char *));
+    if (lines == NULL) {
+        printf("Error: Memory allocation failed\n");
+        fclose(file);
+        return NULL;
+    }
+
+    // Lecture ligne par ligne
+    fseek(file, 0, SEEK_SET);
+    char buffer[1024];
+    int i = 0;
+    while (fgets(buffer, sizeof(buffer), file) != NULL && i < line_count) {
+        size_t len = strlen(buffer);
+
+        // Supprimer le '\n' final
+        if (len > 0 && buffer[len - 1] == '\n') {
+            buffer[len - 1] = '\0';
+            len--;
+        }
+
+        // Copier la ligne
+        lines[i] = (char *)malloc(len + 1);
+        if (lines[i] == NULL) {
+            for (int j = 0; j < i; j++) {
+                free(lines[j]);
+            }
+            free(lines);
+            fclose(file);
+            return NULL;
+        }
+
+        strcpy(lines[i], buffer);
+        i++;
+    }
+
+    lines[i] = NULL;  // Marquer la fin du tableau
+    fclose(file);
+    return lines;
+}
+\end{lstlisting}
+
+\textbf{Construction du graphe depuis un fichier :}
+
+\begin{lstlisting}[caption={Fonction de construction du graphe depuis fichier}]
+list get_grammaire_list(char * line_transitions_tab){
+    if (line_transitions_tab == NULL) {
+        return NULL;
+    }
+
+    list l = NULL;
+    char **lines = get_grammaire_file(line_transitions_tab);
+
+    if (lines == NULL) {
+        return NULL;
+    }
+
+    // Parser chaque ligne
+    for (int i = 0; lines[i] != NULL; i++) {
+        char *line = lines[i];
+        if (strlen(line) == 0) {
+            continue;
+        }
+
+        char state;
+        char transition_input;
+        char next_state;
+        int is_terminal = 0;
+
+        // Parser format: "A -> bB" ou "B -> \t"
+        int pos = 0;
+
+        // Extraire l'etat source (avant "->")
+        while (line[pos] == ' ') pos++;
+        state = line[pos];
+        pos++;
+
+        // Chercher "->"
+        while (line[pos] != '-' && line[pos] != '\0') pos++;
+        if (line[pos] == '\0') continue;
+        pos += 2;  // Sauter "->"
+
+        // Extraire la partie droite
+        while (line[pos] == ' ') pos++;
+
+        // Verifier si c'est une production epsilon (\t)
+        if (line[pos] == '\\' && line[pos + 1] == 't') {
+            is_terminal = 1;
+            transition_input = '\0';
+            next_state = '\0';
+        } else {
+            // Lire symbole de transition et etat suivant
+            transition_input = line[pos];
+            pos++;
+
+            if (line[pos] != '\0' && line[pos] != ' ') {
+                next_state = line[pos];
+            } else {
+                next_state = '\0';
+            }
+        }
+
+        // Chercher ou creer le noeud pour cet etat
+        node *current_node = get_node(l, state);
+
+        if (current_node == NULL) {
+            Transitions trans = NULL;
+            if (!is_terminal) {
+                add_children(&trans, transition_input, next_state);
+            }
+            add_node_to_liste(&l, trans, state, is_terminal);
+        } else {
+            if (!is_terminal) {
+                add_children(&(current_node->transitions), 
+                            transition_input, next_state);
+            }
+            if (is_terminal) {
+                current_node->is_final = 1;
+            }
+        }
+    }
+
+    // Liberation memoire
+    for (int i = 0; lines[i] != NULL; i++) {
+        free(lines[i]);
+    }
+    free(lines);
+
+    return l;
+}
+\end{lstlisting}
+
+\subsubsection{Parsing de Texte (Saisie Manuelle)}
+
+\begin{lstlisting}[caption={Fonction de parsing de texte}]
+list parse_grammaire_text(char * grammar_text){
+    if (grammar_text == NULL || strlen(grammar_text) == 0) {
+        return NULL;
+    }
+
+    list l = NULL;
+
+    // Copier le texte pour tokenisation
+    char *text_copy = strdup(grammar_text);
+    char *line = strtok(text_copy, "\n");
+
+    while (line != NULL) {
+        // Ignorer les lignes vides
+        if (strlen(line) == 0) {
+            line = strtok(NULL, "\n");
+            continue;
+        }
+
+        char state;
+        char transition_input;
+        char next_state;
+        int is_terminal = 0;
+
+        int pos = 0;
+        while (line[pos] == ' ') pos++;
+        if (line[pos] == '\0') {
+            line = strtok(NULL, "\n");
+            continue;
+        }
+        state = line[pos];
+        pos++;
+
+        while (line[pos] != '-' && line[pos] != '\0') pos++;
+        if (line[pos] == '\0') {
+            line = strtok(NULL, "\n");
+            continue;
+        }
+        pos += 2;
+
+        while (line[pos] == ' ') pos++;
+
+        if (line[pos] == '\\' && line[pos + 1] == 't') {
+            is_terminal = 1;
+            transition_input = '\0';
+            next_state = '\0';
+        } else {
+            transition_input = line[pos];
+            pos++;
+
+            if (line[pos] != '\0' && line[pos] != ' ' 
+                && line[pos] != '\r') {
+                next_state = line[pos];
+            } else {
+                next_state = '\0';
+            }
+        }
+
+        node *current_node = get_node(l, state);
+
+        if (current_node == NULL) {
+            Transitions trans = NULL;
+            if (!is_terminal) {
+                add_children(&trans, transition_input, next_state);
+            }
+            add_node_to_liste(&l, trans, state, is_terminal);
+        } else {
+            if (!is_terminal) {
+                add_children(&(current_node->transitions), 
+                            transition_input, next_state);
+            }
+            if (is_terminal) {
+                current_node->is_final = 1;
+            }
+        }
+
+        line = strtok(NULL, "\n");
+    }
+
+    free(text_copy);
+    return l;
+}
+\end{lstlisting}
+
+\subsubsection{Algorithme de Vérification de Chaîne}
+
+\textbf{Fonction principale de validation :}
+
+\begin{lstlisting}[caption={Fonction de vérification de chaîne}]
+int check_string(char * ch, list l){
+    int n = strlen(ch);
+    int cpt = 0;
+
+    if (n == 0) return 0;
+    if (l == NULL) return 0;
+
+    // Commencer au premier etat (etat initial)
+    node * current = l;
+
+    // Parcourir chaque caractere de la chaine
+    for (int i = 0; ch[i] != '\0'; i++) {
+        cpt++;
+
+        // Chercher une transition pour ce caractere
+        children * transition = get_transition(*current, ch[i]);
+
+        if (transition == NULL) {
+            // Pas de transition : verifier si etat final
+            if (current->is_final == 1 && cpt == n - 1) {
+                return 1;  // Acceptee
+            }
+            return 0;  // Rejetee
+        }
+
+        // Passer a l'etat suivant
+        node * next = get_node(l, transition->transition);
+        if (next == NULL) {
+            return 0;  // Etat suivant introuvable
+        }
+        current = next;
+    }
+
+    // Apres lecture complete : verifier si etat final
+    return current->is_final;
+}
+\end{lstlisting}
+
+\textbf{Principe de l'algorithme :}
+\begin{enumerate}
+    \item Initialiser à l'état de départ (premier nœud)
+    \item Pour chaque symbole de la chaîne :
+    \begin{itemize}
+        \item Chercher une transition correspondante
+        \item Si aucune transition n'existe : rejeter (sauf si état final)
+        \item Sinon, suivre la transition vers l'état suivant
+    \end{itemize}
+    \item À la fin : accepter ssi on est dans un état final
+\end{enumerate}
+
+\subsection{L'Interface Utilisateur (Frontend)}
+
+Développée en GTK+3, elle permet une interaction intuitive.
+
+% ===== SECTION 4 : MANUEL D'UTILISATION =====
+\section{Manuel d'Utilisation}
+
+\subsection{Installation des Dépendances}
+
+\begin{lstlisting}[style=bashstyle,caption={Installation des dépendances}]
+sudo apt-get install build-essential libgtk-3-dev
+\end{lstlisting}
+
+\subsection{Compilation}
+
+Le projet utilise un \textbf{Makefile} pour automatiser la gestion des dépendances.
+
+\textbf{Commandes :}
+
+\begin{lstlisting}[style=bashstyle,caption={Commandes de compilation}]
+make              # Compile tout le projet
+make main         # Compile uniquement la version console
+make grammar_app  # Compile uniquement l'interface graphique
+make run          # Compile et execute la version console
+make run-gui      # Compile et execute l'interface graphique
+make clean        # Nettoie les fichiers compiles
+\end{lstlisting}
+
+\subsection{Format de Grammaire}
+
+Les fichiers de grammaire (dans \texttt{input/}) utilisent le format :
+
+\begin{lstlisting}[caption={Format de fichier grammaire}]
+A -> aB
+B -> bB
+B -> \t
+\end{lstlisting}
+
+\textbf{Signification :}
+\begin{itemize}
+    \item \texttt{A -> aB} : Depuis l'état A, avec l'entrée 'a', transition vers l'état B
+    \item \texttt{B -> \textbackslash t} : L'état B est un état terminal (acceptant)
+\end{itemize}
+
+\subsection{Exemple de Test Complet}
+
+\textbf{Fichier de grammaire (\texttt{input/grammaire.txt}) :}
+
+\begin{lstlisting}[caption={Exemple de grammaire}]
+A -> aB
+B -> bB
+B -> cB
+B -> dB
+B -> \t
+\end{lstlisting}
+
+\textbf{Langage accepté :} $L = \{ a(b|c|d)^* \}$
+
+\textbf{Tableau de tests :}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Chaîne} & \textbf{Résultat} & \textbf{Explication} \\
+\midrule
+\texttt{a} & Acceptée & $A \rightarrow aB$, B est final \\
+\texttt{ab} & Acceptée & $A \rightarrow aB \rightarrow bB$ (final) \\
+\texttt{abbb} & Acceptée & $A \rightarrow aB \rightarrow bB \rightarrow bB \rightarrow bB$ (final) \\
+\texttt{acd} & Acceptée & $A \rightarrow aB \rightarrow cB \rightarrow dB$ (final) \\
+\texttt{ba} & Rejetée & Pas de transition 'b' depuis A \\
+\texttt{abc} & Acceptée & $A \rightarrow aB \rightarrow bB \rightarrow cB$ (final) \\
+\texttt{aaa} & Rejetée & Après 'aa', pas de transition 'a' depuis B \\
+\texttt{abcd} & Acceptée & $A \rightarrow aB \rightarrow bB \rightarrow cB \rightarrow dB$ (final) \\
+\bottomrule
+\end{tabular}
+\caption{Tableau des résultats de tests}
+\end{table}
+
+\subsection{Utilisation de l'Interface Graphique}
+
+\textbf{Étapes :}
+
+\begin{enumerate}
+    \item \textbf{Lancer l'application :}
+    \begin{lstlisting}[style=bashstyle]
+make run-gui
+    \end{lstlisting}
+    
+    \item \textbf{Chargement de la grammaire (2 méthodes) :}
+    
+    \textbf{Méthode 1 - Depuis un fichier :}
+    \begin{itemize}
+        \item Onglet ``Load from File''
+        \item Saisir le chemin du fichier (défaut: \texttt{input/grammaire.txt})
+        \item Cliquer sur ``Load Grammar''
+    \end{itemize}
+    
+    \textbf{Méthode 2 - Saisie manuelle :}
+    \begin{itemize}
+        \item Onglet ``Manual Input''
+        \item Saisir les règles ligne par ligne
+        \item Cliquer sur ``Parse Grammar''
+    \end{itemize}
+    
+    \item \textbf{Visualisation :}
+    \begin{itemize}
+        \item La grammaire s'affiche avec le format : \texttt{État : ->symboleÉtat\_suivant}
+        \item Les états finaux sont marqués avec \texttt{*}
+    \end{itemize}
+    
+    \item \textbf{Test de chaînes :}
+    \begin{itemize}
+        \item Saisir une chaîne dans le champ ``Test String''
+        \item Cliquer sur ``Check String''
+        \item Le résultat apparaît en \textcolor{green}{\textbf{vert}} (acceptée) ou \textcolor{red}{\textbf{rouge}} (rejetée)
+    \end{itemize}
+\end{enumerate}
+
+% ===== SECTION 5 : DIFFICULTÉS RENCONTRÉES =====
+\section{Difficultés Rencontrées et Solutions}
+
+\subsection{Gestion de la Mémoire en C}
+
+\textbf{Problème :} Les structures chaînées (\texttt{list}, \texttt{Transitions}) nécessitent une allocation dynamique avec \texttt{malloc()}. Risque de fuites mémoire si les pointeurs ne sont pas correctement libérés.
+
+\textbf{Solution :}
+\begin{itemize}
+    \item Vérification systématique du retour de \texttt{malloc()} :
+    \begin{lstlisting}
+children *c = (children*)malloc(sizeof(children));
+if (!c) return;  // Gestion d'erreur
+    \end{lstlisting}
+    
+    \item Libération explicite de la mémoire dans \texttt{get\_grammaire\_list()} :
+    \begin{lstlisting}
+for (int i = 0; lines[i] != NULL; i++) {
+    free(lines[i]);
+}
+free(lines);
+    \end{lstlisting}
+\end{itemize}
+
+\subsection{Algorithme de Vérification}
+
+\textbf{Problème :} Gérer correctement le cas où la chaîne peut être acceptée avant d'avoir consommé tous les caractères (si l'état courant est final).
+
+\textbf{Solution :} Ajout d'une condition spéciale :
+
+\begin{lstlisting}
+if (transition == NULL) {
+    if (current->is_final == 1 && cpt == n - 1) {
+        return 1;  // Accepter si etat final et un seul caractere restant
+    }
+    return 0;
+}
+\end{lstlisting}
+
+% ===== SECTION 6 : TESTS ET VALIDATION =====
+\section{Tests et Validation}
+
+\subsection{Tests Unitaires (Version Console)}
+
+\textbf{Fichier de test (\texttt{main.c}) :}
+
+\begin{lstlisting}[caption={Programme de test principal}]
+#include <stdio.h>
+#include "config/graph.h"
+#include "config/utils.h"
+
+int main(){
+    list l = get_grammaire_list("input/grammaire.txt");
+
+    if (l != NULL) {
+        printf("Grammar loaded successfully:\n");
+        afficher_liste(l);
+    } else {
+        printf("Failed to load grammar\n");
+    }
+
+    // Tests
+    printf("result : %d\n", check_string("aaa", l));      // 0 (rejetee)
+    printf("result : %d\n", check_string("dddccccdcc", l)); // Selon grammaire
+
+    return 0;
+}
+\end{lstlisting}
+
+% ===== SECTION 7 : CONCLUSION =====
+\section{Conclusion}
+
+Ce projet a permis de mettre en pratique les concepts fondamentaux de la \textbf{théorie des automates} et des \textbf{grammaires formelles}. L'implémentation d'une interface graphique au-dessus d'un moteur de calcul en C démontre :
+
+\begin{enumerate}
+    \item \textbf{La faisabilité d'outils pédagogiques} pour l'apprentissage de la compilation
+    \item \textbf{L'importance de la séparation des responsabilités} (Backend/Frontend)
+    \item \textbf{La puissance des structures de données} (graphes, listes chaînées) pour modéliser des concepts théoriques
+\end{enumerate}
+
+\subsection*{Perspectives d'Amélioration}
+
+\begin{itemize}
+    \item \textbf{Optimisation mémoire} : Implémentation d'un garbage collector ou passage à C++
+    \item \textbf{Extension aux grammaires context-free} : Support des grammaires de type 2
+    \item \textbf{Visualisation graphique} : Affichage du graphe avec Cairo ou Graphviz
+    \item \textbf{Export de résultats} : Génération de rapports PDF
+    \item \textbf{Déterminisation} : Conversion NFA $\rightarrow$ DFA pour optimisation
+\end{itemize}
+
+% ===== ANNEXES =====
+\appendix
+
+\section{Structure du Projet}
+
+\begin{lstlisting}[style=bashstyle,caption={Arborescence du projet}]
+.
+|-- config/
+|   |-- graph.h          # Structures de donnees
+|   |-- graph.c          # Operations sur le graphe
+|   |-- utils.h          # Interfaces parsing/validation
+|   |-- utils.c          # Implementation parsing/validation
+|   |-- constant.h       # Constantes du projet
+|   `-- constant.c
+|-- ui/
+|   |-- grammar_ui.h     # Interface GTK
+|   |-- grammar_ui.c     # Implementation UI
+|   `-- start.c          # Point d'entree GUI
+|-- input/
+|   `-- grammaire.txt    # Fichier de grammaire de test
+|-- main.c               # Version console
+|-- Makefile             # Scripts de compilation
+`-- CLAUDE.md            # Documentation technique
+\end{lstlisting}
+
+\section{Exemple de Fichier de Grammaire}
+
+\textbf{Grammaire reconnaissant les identifiants} (commence par lettre, suivi de lettres/chiffres) :
+
+\begin{lstlisting}[caption={Grammaire pour identifiants}]
+I -> aA
+I -> bA
+A -> aA
+A -> bA
+A -> 0A
+A -> 1A
+A -> \t
+\end{lstlisting}
+
+\textbf{Langage :} $L = \{ (a|b)(a|b|0|1)^* \}$
+
+\textbf{Exemples :}
+\begin{itemize}
+    \item \texttt{a}, \texttt{b}, \texttt{a0}, \texttt{b1a}, \texttt{ab01} $\rightarrow$ Acceptés
+    \item \texttt{0a}, \texttt{1b}, \texttt{01} $\rightarrow$ Rejetés (ne commencent pas par lettre)
+\end{itemize}
+
+\section{Références Bibliographiques}
+
+\begin{enumerate}
+    \item \textbf{Introduction to Automata Theory, Languages, and Computation} - Hopcroft, Motwani, Ullman
+    \item \textbf{Compilers: Principles, Techniques, and Tools} - Aho, Lam, Sethi, Ullman (Dragon Book)
+    \item \textbf{GTK+ 3 Reference Manual} - Documentation officielle GNOME
+    \item \textbf{The C Programming Language} - Kernighan \& Ritchie
+\end{enumerate}
+
+\end{document}
